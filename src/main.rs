@@ -1,7 +1,19 @@
 use axum::{routing::get, Router};
+use maud::{html, Markup, DOCTYPE};
 
-async fn placeholder() -> &'static str {
-    "pollen is coming"
+async fn placeholder() -> Markup {
+    html! {
+        (DOCTYPE)
+        html lang="en" {
+            head {
+                meta charset="utf-8";
+                title { "pollen.party" }
+            }
+            body {
+                p { "pollen is coming" }
+            }
+        }
+    }
 }
 
 #[shuttle_runtime::main]
