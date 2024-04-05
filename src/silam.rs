@@ -1,6 +1,7 @@
 use std::fmt::Display;
 
-use ndarray::{Array3, Ix3};
+use chrono::{DateTime, Duration, Timelike, Utc};
+use ndarray::{s, Array3, Ix3};
 use proj4rs::Proj;
 
 #[derive(Debug)]
@@ -65,11 +66,13 @@ impl Display for PollenType {
 }
 
 pub struct Pollen {
+    pub time: DateTime<Utc>,
     pub pollen_index: PollenIndex,
     pub pollen_index_source: PollenType,
 }
 
 pub struct Silam {
+    time: DateTime<Utc>,
     poli: Array3<f32>,
     polisrc: Array3<f32>,
     rlats: Vec<f32>,
@@ -108,6 +111,13 @@ impl Silam {
             .expect("POLISRC could not be parsed as Array3");
 
         Ok(Silam {
+            time: Utc::now()
+                .with_minute(0)
+                .unwrap()
+                .with_second(0)
+                .unwrap()
+                .with_nanosecond(0)
+                .unwrap(),
             poli,
             polisrc,
             rlats,
@@ -115,26 +125,29 @@ impl Silam {
         })
     }
 
-    pub fn get_first_at_coords(&self, lon: &f32, lat: &f32) -> Pollen {
+    pub fn get_at_coords(&self, lon: &f32, lat: &f32) -> Vec<Pollen> {
         let (projected_lon, projected_lat) = project_lon_lat(lon, lat);
 
         let closest_rlon_index = find_closest(&self.rlons, projected_lon).unwrap();
         let closest_rlat_index = find_closest(&self.rlats, projected_lat).unwrap();
 
-        let pollen_index = self
+        let pollen_indexes = self
             .poli
-            .get((0, closest_rlat_index, closest_rlon_index))
-            .unwrap();
+            .slice(s![.., closest_rlat_index, closest_rlon_index]); // apparently index here works by lat/lon, not lon/lat!
 
-        let pollen_index_source = self
-            .polisrc
-            .get((0, closest_rlat_index, closest_rlon_index))
-            .unwrap();
-
-        Pollen {
-            pollen_index: PollenIndex::from_raw(pollen_index),
-            pollen_index_source: PollenType::from_raw(pollen_index_source),
-        }
+        pollen_indexes
+            .iter()
+            .enumerate()
+            .map(|(i, pollen_index)| Pollen {
+                pollen_index: PollenIndex::from_raw(pollen_index),
+                pollen_index_source: PollenType::from_raw(
+                    self.polisrc
+                        .get((i, closest_rlat_index, closest_rlon_index))
+                        .unwrap(),
+                ),
+                time: self.time + Duration::hours(i.try_into().unwrap()),
+            })
+            .collect()
     }
 }
 
