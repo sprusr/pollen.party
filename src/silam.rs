@@ -1,7 +1,7 @@
 use std::fmt::Display;
 
 use ndarray::{Array3, Ix3};
-use proj::Proj;
+use proj4rs::Proj;
 
 #[derive(Debug)]
 pub enum PollenIndex {
@@ -138,13 +138,19 @@ impl Silam {
     }
 }
 
-const PROJECTION_FROM: &str = "+proj=longlat";
-const PROJECTION_TO: &str = "+proj=ob_tran +o_proj=longlat +o_lon_p=0 +o_lat_p=30";
-
 fn project_lon_lat(lon: &f32, lat: &f32) -> (f32, f32) {
-    // TODO: error handling
-    let projection = Proj::new_known_crs(PROJECTION_FROM, PROJECTION_TO, None).unwrap();
-    projection.convert((*lon, *lat)).unwrap()
+    let lonlat = Proj::from_proj_string("+proj=longlat").unwrap();
+    let tmerc = Proj::from_proj_string("+proj=tmerc +lon_0=0 +lat_0=0").unwrap();
+    let rotated = Proj::from_proj_string("+proj=tmerc +lon_0=0 +lat_0=-60").unwrap();
+
+    let mut point_3d = (lon.to_radians() as f64, lat.to_radians() as f64, 0.0);
+    proj4rs::transform::transform(&lonlat, &tmerc, &mut point_3d).unwrap();
+    proj4rs::transform::transform(&rotated, &lonlat, &mut point_3d).unwrap();
+
+    (
+        point_3d.0.to_degrees() as f32,
+        point_3d.1.to_degrees() as f32,
+    )
 }
 
 fn find_closest(vec: &Vec<f32>, target: f32) -> Option<usize> {
