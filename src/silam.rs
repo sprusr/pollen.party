@@ -76,10 +76,13 @@ pub struct Silam {
     rlons: Vec<f32>,
 }
 
+// &time_start=2024-03-31T01:00:00Z&time_end=2024-04-08T00:00:00Z
+const SILAM_URL: &str = "https://thredds.silam.fmi.fi/thredds/ncss/grid/silam_europe_pollen_v5_9/silam_europe_pollen_v5_9_best.ncd?var=POLI&var=POLISRC&north=75.950&west=-47.600&east=78.059&south=19.003&horizStride=1&accept=netcdf4ext&addLatLon=true";
+
 impl Silam {
-    pub async fn fetch<'a>() -> Result<Silam, Box<dyn std::error::Error>> {
-        // TODO: fetch from server
-        let file = netcdf::open("silam_europe_pollen_v5_9_best.ncd.nc4")?;
+    pub async fn fetch() -> Result<Silam, Box<dyn std::error::Error>> {
+        let body = reqwest::get(SILAM_URL).await?.bytes().await?;
+        let file = netcdf::open_mem(None, &body)?;
 
         let rlons: Vec<f32> = file
             .variable("rlon")
@@ -112,16 +115,8 @@ impl Silam {
         })
     }
 
-    fn project_lon_lat(&self, lon: &f32, lat: &f32) -> (f32, f32) {
-        // TODO: error handling
-        let projection_from = "+proj=longlat";
-        let projection_to = "+proj=ob_tran +o_proj=longlat +o_lon_p=0 +o_lat_p=30";
-        let projection = Proj::new_known_crs(projection_from, projection_to, None).unwrap();
-        projection.convert((*lon, *lat)).unwrap()
-    }
-
     pub fn get_first_at_coords(&self, lon: &f32, lat: &f32) -> Pollen {
-        let (projected_lon, projected_lat) = self.project_lon_lat(lon, lat);
+        let (projected_lon, projected_lat) = project_lon_lat(lon, lat);
 
         let closest_rlon_index = find_closest(&self.rlons, projected_lon).unwrap();
         let closest_rlat_index = find_closest(&self.rlats, projected_lat).unwrap();
@@ -141,6 +136,15 @@ impl Silam {
             pollen_index_source: PollenType::from_raw(pollen_index_source),
         }
     }
+}
+
+const PROJECTION_FROM: &str = "+proj=longlat";
+const PROJECTION_TO: &str = "+proj=ob_tran +o_proj=longlat +o_lon_p=0 +o_lat_p=30";
+
+fn project_lon_lat(lon: &f32, lat: &f32) -> (f32, f32) {
+    // TODO: error handling
+    let projection = Proj::new_known_crs(PROJECTION_FROM, PROJECTION_TO, None).unwrap();
+    projection.convert((*lon, *lat)).unwrap()
 }
 
 fn find_closest(vec: &Vec<f32>, target: f32) -> Option<usize> {

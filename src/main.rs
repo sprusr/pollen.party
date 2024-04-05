@@ -19,14 +19,14 @@ async fn main() -> shuttle_axum::ShuttleAxum {
     });
 
     let router = Router::new()
-        .route("/", get(placeholder))
+        .route("/", get(index))
         .with_state(state)
         .fallback_service(ServeDir::new("assets"));
 
     Ok(router.into())
 }
 
-async fn placeholder(State(state): State<Arc<AppState>>) -> Markup {
+async fn index(State(state): State<Arc<AppState>>) -> Markup {
     let lon = 24.956100;
     let lat = 60.156136;
     let pollen = state.silam.get_first_at_coords(&lon, &lat);
@@ -42,8 +42,8 @@ async fn placeholder(State(state): State<Arc<AppState>>) -> Markup {
             body {
                 p { "pollen is coming" }
                 p { "kaivopuisto info" }
-                p { "index at 1am was: " (pollen.pollen_index) }
-                p { "main source at 1am was: " (pollen.pollen_index_source) }
+                p { "index when server started was: " (pollen.pollen_index) }
+                p { "main source when server started was: " (pollen.pollen_index_source) }
             }
         }
     }
