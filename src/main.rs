@@ -6,6 +6,7 @@ use axum::{
 use chrono::Locale;
 use chrono_tz::Tz;
 use maud::{html, Markup, DOCTYPE};
+use reverse_geocoder::ReverseGeocoder;
 use serde::Deserialize;
 use std::{
     str::FromStr,
@@ -21,8 +22,9 @@ mod silam;
 use crate::silam::{Pollen, Silam};
 
 struct AppState {
-    silam: RwLock<Silam>,
     finder: DefaultFinder,
+    reverse_geocoder: ReverseGeocoder,
+    silam: RwLock<Silam>,
 }
 
 #[derive(Deserialize)]
@@ -34,8 +36,9 @@ struct Params {
 #[shuttle_runtime::main]
 async fn main() -> shuttle_axum::ShuttleAxum {
     let state = Arc::new(AppState {
-        silam: RwLock::new(Silam::fetch().await.unwrap()),
         finder: DefaultFinder::new(),
+        reverse_geocoder: ReverseGeocoder::new(),
+        silam: RwLock::new(Silam::fetch().await.unwrap()),
     });
 
     let router = Router::new()
@@ -50,15 +53,26 @@ async fn main() -> shuttle_axum::ShuttleAxum {
 
 async fn index(Query(params): Query<Params>, State(state): State<Arc<AppState>>) -> Markup {
     let result: Option<(Vec<Pollen>, String, Tz)> = match (params.lon, params.lat) {
-        (Some(lon), Some(lat)) => Some((
-            state.silam.read().unwrap().get_at_coords(&lon, &lat),
-            format!("Unknown Location ({}, {})", lat, lon),
-            state
+        (Some(lon), Some(lat)) => {
+            let pollen = state.silam.read().unwrap().get_at_coords(&lon, &lat);
+            let location = state
+                .reverse_geocoder
+                .search((lat.into(), lon.into()))
+                .record;
+            let tz = state
                 .finder
-                .get_tz_name(lon as f64, lat as f64)
+                .get_tz_name(lon.into(), lat.into())
                 .parse()
-                .unwrap(),
-        )),
+                .unwrap();
+            Some((
+                pollen,
+                format!(
+                    "{}, {}, {}, {} ({}, {})",
+                    location.name, location.admin1, location.admin2, location.cc, lat, lon
+                ),
+                tz,
+            ))
+        }
         _ => None,
     };
 
