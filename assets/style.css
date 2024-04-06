@@ -8,8 +8,6 @@ html {
   --text-main: #FFEBB2;
   --text-link-hover: #E59BE9;
   --element-border-width: 0.25rem;
-
-  height: -webkit-fill-available;
 }
 
 body {
@@ -21,13 +19,12 @@ body {
   font-family: monospace;
   display: flex;
   flex-direction: column;
-  max-width: 500px;
+  max-width: 30rem;
 }
 
-@media (max-width: 500px) {
+@media (max-width: 30rem) {
   body {
-    min-height: 100vh;
-    min-height: -webkit-fill-available;
+    min-height: 100dvh;
     margin: 0 auto;
   }
 }
@@ -41,7 +38,7 @@ a:hover {
   color: var(--text-link-hover);
 }
 
-header>h1 {
+header > h1 {
   margin: 0;
 }
 
@@ -61,19 +58,19 @@ form {
   align-items: center;
 }
 
-form>p {
+form > p {
   grid-column: 1 / 3;
   text-align: center;
   margin: 0;
 }
 
-form>label {
+form > label {
   vertical-align: middle;
   font-size: 1rem;
   font-weight: bold;
 }
 
-form>input {
+form > input {
   border: var(--element-border-width) solid var(--border-main);
   background-color: var(--text-main);
   color: var(--surface-main);
@@ -84,16 +81,16 @@ form>input {
   width: 100%;
 }
 
-form>input[type="button"],
-form>input[type="submit"] {
+form > input[type="button"],
+form > input[type="submit"] {
   cursor: pointer;
   font-size: 1.5rem;
   padding: 1rem;
   grid-column: 1 / 3;
 }
 
-form>input:hover,
-form>input:focus {
+form > input:hover,
+form > input:focus {
   color: var(--text-link-hover);
 }
 
