@@ -8,6 +8,8 @@ html {
   --text-main: #FFEBB2;
   --text-link-hover: #E59BE9;
   --element-border-width: 0.25rem;
+
+  height: -webkit-fill-available;
 }
 
 body {
@@ -25,6 +27,7 @@ body {
 @media (max-width: 500px) {
   body {
     min-height: 100vh;
+    min-height: -webkit-fill-available;
     margin: 0 auto;
   }
 }
