@@ -19,10 +19,10 @@ body {
   font-family: monospace;
   display: flex;
   flex-direction: column;
-  max-width: 30rem;
+  max-width: 500px;
 }
 
-@media (max-width: 30rem) {
+@media (max-width: 500px) {
   body {
     min-height: 100vh;
     margin: 0 auto;
