@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-use chrono::{DateTime, Duration, Timelike, Utc};
+use chrono::{DateTime, Duration, SecondsFormat, Timelike, Utc};
 use ndarray::{s, Array3, Ix3};
 use proj4rs::Proj;
 
@@ -79,12 +79,22 @@ pub struct Silam {
     rlons: Vec<f32>,
 }
 
-// &time_start=2024-03-31T01:00:00Z&time_end=2024-04-08T00:00:00Z
-const SILAM_URL: &str = "https://thredds.silam.fmi.fi/thredds/ncss/grid/silam_europe_pollen_v5_9/silam_europe_pollen_v5_9_best.ncd?var=POLI&var=POLISRC&north=75.950&west=-47.600&east=78.059&south=19.003&horizStride=1&accept=netcdf4ext&addLatLon=true";
-
 impl Silam {
     pub async fn fetch() -> Result<Silam, Box<dyn std::error::Error>> {
-        let body = reqwest::get(SILAM_URL).await?.bytes().await?;
+        let start_time = Utc::now()
+            .with_minute(0)
+            .unwrap()
+            .with_second(0)
+            .unwrap()
+            .with_nanosecond(0)
+            .unwrap();
+        let end_time = start_time + Duration::hours(23);
+        let silam_url = format!(
+            "https://thredds.silam.fmi.fi/thredds/ncss/grid/silam_europe_pollen_v5_9/silam_europe_pollen_v5_9_best.ncd?var=POLI&var=POLISRC&north=75.950&west=-47.600&east=78.059&south=19.003&horizStride=1&accept=netcdf4ext&addLatLon=true&time_start={}&time_end={}",
+            start_time.to_rfc3339_opts(SecondsFormat::Secs, true),
+            end_time.to_rfc3339_opts(SecondsFormat::Secs, true),
+        );
+        let body = reqwest::get(silam_url).await?.bytes().await?;
         let file = netcdf::open_mem(None, &body)?;
 
         let rlons: Vec<f32> = file
@@ -111,13 +121,7 @@ impl Silam {
             .expect("POLISRC could not be parsed as Array3");
 
         Ok(Silam {
-            time: Utc::now()
-                .with_minute(0)
-                .unwrap()
-                .with_second(0)
-                .unwrap()
-                .with_nanosecond(0)
-                .unwrap(),
+            time: start_time,
             poli,
             polisrc,
             rlats,
