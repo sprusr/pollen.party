@@ -70,7 +70,15 @@ async fn index(Query(params): Query<Params>, State(state): State<Arc<AppState>>)
                     a href="https://silam.fmi.fi/" { "FMI SILAM" }
                     " and "
                     a href="https://www.polleninfo.org/" { "EAN" }
-                    "."
+                    ". Times displayed in location's local timezone."
+                }
+                form action="" method="GET" id="form" {
+                    label for="lat" { "Latitude" }
+                    input type="text" value=(lat) name="lat" id="lat";
+                    label for="lon" { "Longitude" }
+                    input type="text" value=(lon) name="lon" id="lon";
+                    input type="button" value="Geolocate" id="geolocate";
+                    input type="submit";
                 }
                 h2 { (location) }
                 table {
