@@ -18,7 +18,7 @@ use tzf_rs::DefaultFinder;
 
 mod silam;
 
-use crate::silam::Silam;
+use crate::silam::{Pollen, Silam};
 
 struct AppState {
     silam: RwLock<Silam>,
@@ -49,15 +49,18 @@ async fn main() -> shuttle_axum::ShuttleAxum {
 }
 
 async fn index(Query(params): Query<Params>, State(state): State<Arc<AppState>>) -> Markup {
-    let (location, lon, lat): (String, f32, f32) = match (params.lon, params.lat) {
-        (Some(lon), Some(lat)) => (format!("Unknown Location ({}, {})", lat, lon), lon, lat),
-        _ => ("Kaivopuisto".to_string(), 24.956100, 60.156136),
+    let result: Option<(Vec<Pollen>, String, Tz)> = match (params.lon, params.lat) {
+        (Some(lon), Some(lat)) => Some((
+            state.silam.read().unwrap().get_at_coords(&lon, &lat),
+            format!("Unknown Location ({}, {})", lat, lon),
+            state
+                .finder
+                .get_tz_name(lon as f64, lat as f64)
+                .parse()
+                .unwrap(),
+        )),
+        _ => None,
     };
-
-    let pollen = state.silam.read().unwrap().get_at_coords(&lon, &lat);
-
-    let timezone_name = state.finder.get_tz_name(lon as f64, lat as f64);
-    let timezone: Tz = timezone_name.parse().unwrap();
 
     let locale = Locale::from_str("en_GB").unwrap();
 
@@ -71,37 +74,43 @@ async fn index(Query(params): Query<Params>, State(state): State<Arc<AppState>>)
                 script src="script.js" defer {}
             }
             body {
-                h1 { "pollen.party" }
-                p {
-                    "This website provides pollen forecasts for Europe. Data from "
-                    a href="https://silam.fmi.fi/" { "FMI SILAM" }
-                    " and "
-                    a href="https://www.polleninfo.org/" { "EAN" }
-                    ". Times displayed in location's local timezone."
+                header {
+                    h1 { "⚘ " a href="/" { "pollen.party" } " ⚘" }
                 }
-                form action="" method="GET" id="form" {
-                    label for="lat" { "Latitude" }
-                    input type="text" value=(lat) name="lat" id="lat";
-                    label for="lon" { "Longitude" }
-                    input type="text" value=(lon) name="lon" id="lon";
-                    input type="button" value="Geolocate" id="geolocate";
-                    input type="submit";
-                }
-                h2 { (location) }
-                table {
-                    tr {
-                        @for p in &pollen {
-                            th { (p.time.with_timezone(&timezone).format_localized("%A %X", locale)) }
+                main {
+                    @if let Some((pollen, location, timezone)) = result {
+                        h2 { (location) }
+                        table {
+                            @for p in &pollen {
+                                tr {
+                                    td { (p.time.with_timezone(&timezone).format_localized("%a %R", locale)) }
+                                    td { (p.pollen_index) " (" (p.pollen_index_source) ")" }
+                                }
+                            }
+                        }
+                    } @else {
+                        p {
+                            "This website provides pollen forecasts for Europe. Data from "
+                            a href="https://silam.fmi.fi/" { "FMI SILAM" }
+                            " and "
+                            a href="https://www.polleninfo.org/" { "EAN" }
+                            ". Times displayed in location's local timezone."
+                        }
+                        form action="" method="GET" id="form" {
+                            input type="button" value="Geolocate" id="geolocate";
+                            p { "or" }
+                            label for="lat" { "Latitude" }
+                            input type="text" name="lat" id="lat";
+                            label for="lon" { "Longitude" }
+                            input type="text" name="lon" id="lon";
+                            input type="submit";
                         }
                     }
-                    tr {
-                        @for p in &pollen {
-                            td { (p.pollen_index) " (" (p.pollen_index_source) ")" }
-                        }
-                    }
                 }
-                p {
-                    small { "Data was fetched at: " (state.silam.read().unwrap().fetch_time) }
+                footer {
+                    p {
+                        small { "Data was fetched at: " (state.silam.read().unwrap().fetch_time) }
+                    }
                 }
             }
         }
