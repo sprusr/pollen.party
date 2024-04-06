@@ -72,7 +72,8 @@ pub struct Pollen {
 }
 
 pub struct Silam {
-    time: DateTime<Utc>,
+    pub fetch_time: DateTime<Utc>,
+    start_time: DateTime<Utc>,
     poli: Array3<f32>,
     polisrc: Array3<f32>,
     rlats: Vec<f32>,
@@ -82,6 +83,8 @@ pub struct Silam {
 impl Silam {
     pub async fn fetch() -> Result<Silam, Box<dyn std::error::Error>> {
         let start_time = Utc::now()
+            .with_hour(0)
+            .unwrap()
             .with_minute(0)
             .unwrap()
             .with_second(0)
@@ -94,6 +97,7 @@ impl Silam {
             start_time.to_rfc3339_opts(SecondsFormat::Secs, true),
             end_time.to_rfc3339_opts(SecondsFormat::Secs, true),
         );
+        println!("Fetching new data from SILAM");
         let body = reqwest::get(silam_url).await?.bytes().await?;
         let file = netcdf::open_mem(None, &body)?;
 
@@ -121,12 +125,17 @@ impl Silam {
             .expect("POLISRC could not be parsed as Array3");
 
         Ok(Silam {
-            time: start_time,
+            fetch_time: Utc::now(),
+            start_time,
             poli,
             polisrc,
             rlats,
             rlons,
         })
+    }
+
+    pub fn is_stale(&self) -> bool {
+        self.fetch_time < Utc::now() - Duration::hours(6)
     }
 
     pub fn get_at_coords(&self, lon: &f32, lat: &f32) -> Vec<Pollen> {
@@ -149,7 +158,7 @@ impl Silam {
                         .get((i, closest_rlat_index, closest_rlon_index))
                         .unwrap(),
                 ),
-                time: self.time + Duration::hours(i.try_into().unwrap()),
+                time: self.start_time + Duration::hours(i.try_into().unwrap()),
             })
             .collect()
     }
