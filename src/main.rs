@@ -70,6 +70,7 @@ async fn index(Query(params): Query<Params>, State(state): State<Arc<AppState>>)
             head {
                 meta charset="utf-8";
                 title { "pollen.party" }
+                meta name="viewport" content="width=device-width, initial-scale=1" {}
                 link  rel="stylesheet" href="style.css" {}
                 script src="script.js" defer {}
             }
