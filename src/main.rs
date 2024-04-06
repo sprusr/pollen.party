@@ -115,9 +115,9 @@ async fn index(Query(params): Query<Params>, State(state): State<Arc<AppState>>)
                             input type="button" value="Geolocate" id="geolocate";
                             p { "or" }
                             label for="lat" { "Latitude" }
-                            input type="number" name="lat" id="lat";
+                            input type="number" step="any" name="lat" id="lat" placeholder="E.g. 60.155229";
                             label for="lon" { "Longitude" }
-                            input type="number" name="lon" id="lon";
+                            input type="number" step="any" name="lon" id="lon" placeholder="E.g. 24.955250";
                             input type="submit";
                         }
                     }
