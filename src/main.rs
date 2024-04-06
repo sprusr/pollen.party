@@ -1,32 +1,35 @@
-use std::sync::Arc;
-
 use axum::{
     extract::{Query, State},
     routing::get,
     Router,
 };
+use chrono_tz::Tz;
 use maud::{html, Markup, DOCTYPE};
 use serde::Deserialize;
+use std::sync::Arc;
 use tower_http::services::ServeDir;
-
-use crate::silam::Silam;
+use tzf_rs::DefaultFinder;
 
 mod silam;
 
+use crate::silam::Silam;
+
 struct AppState {
     silam: Silam,
+    finder: DefaultFinder,
 }
 
 #[shuttle_runtime::main]
 async fn main() -> shuttle_axum::ShuttleAxum {
     let state = Arc::new(AppState {
         silam: Silam::fetch().await.unwrap(),
+        finder: DefaultFinder::new(),
     });
 
     let router = Router::new()
         .route("/", get(index))
         .with_state(state)
-        .fallback_service(ServeDir::new("assets"));
+        .fallback_service(ServeDir::new("assets")); // TODO: move to /static to avoid extra FS reads
 
     Ok(router.into())
 }
@@ -45,6 +48,9 @@ async fn index(Query(params): Query<Params>, State(state): State<Arc<AppState>>)
 
     let pollen = state.silam.get_at_coords(&lon, &lat);
 
+    let timezone_name = state.finder.get_tz_name(lon as f64, lat as f64);
+    let timezone: Tz = timezone_name.parse().unwrap();
+
     html! {
         (DOCTYPE)
         html lang="en" {
@@ -56,7 +62,7 @@ async fn index(Query(params): Query<Params>, State(state): State<Arc<AppState>>)
             body {
                 p { "pollen is coming" }
                 p { (location) " info" }
-                p { "time: " (pollen[0].time) }
+                p { "time: " (pollen[0].time.with_timezone(&timezone)) " (local time at location)" }
                 p { "index: " (pollen[0].pollen_index) }
                 p { "main source: " (pollen[0].pollen_index_source) }
             }

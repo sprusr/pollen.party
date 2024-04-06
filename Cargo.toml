@@ -6,6 +6,7 @@ edition = "2021"
 [dependencies]
 axum = "0.7.4"
 chrono = "0.4.37"
+chrono-tz = "0.9.0"
 maud = { version = "0.26.0", features = ["axum"] }
 ndarray = "0.15.6"
 netcdf = { version = "0.9.1", features = ["static"] }
@@ -16,3 +17,4 @@ shuttle-axum = "0.43.0"
 shuttle-runtime = "0.43.0"
 tokio = "1.28.2"
 tower-http = { version = "0.5.2", features = ["fs"] }
+tzf-rs = "0.4.7"
