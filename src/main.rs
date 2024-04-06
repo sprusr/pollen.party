@@ -29,7 +29,7 @@ async fn main() -> shuttle_axum::ShuttleAxum {
     let router = Router::new()
         .route("/", get(index))
         .with_state(state)
-        .fallback_service(ServeDir::new("assets")); // TODO: move to /static to avoid extra FS reads
+        .fallback_service(ServeDir::new("assets"));
 
     Ok(router.into())
 }
@@ -57,7 +57,8 @@ async fn index(Query(params): Query<Params>, State(state): State<Arc<AppState>>)
             head {
                 meta charset="utf-8";
                 title { "pollen.party" }
-                link  rel="stylesheet" href="style.css";
+                link  rel="stylesheet" href="style.css" {}
+                script src="script.js" defer {}
             }
             body {
                 p { "pollen is coming" }
