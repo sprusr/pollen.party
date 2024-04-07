@@ -139,7 +139,7 @@ async fn index(Query(params): Query<Params>, State(state): State<Arc<AppState>>)
                         form action="" method="GET" {
                             label for="loc" { "Location" }
                             input type="text" name="loc" id="loc" placeholder="E.g. Helsinki, Finland";
-                            input type="submit";
+                            input type="submit" value="Search";
                         }
                     }
                 }
