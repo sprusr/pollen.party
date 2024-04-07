@@ -4,7 +4,7 @@ use axum::{
     routing::get,
     Router,
 };
-use chrono::Locale;
+use chrono::{Local, Locale, NaiveTime};
 use chrono_tz::Tz;
 use maud::{html, DOCTYPE};
 use nominatim::{Client, IdentificationMethod};
@@ -63,16 +63,37 @@ async fn index(Query(params): Query<Params>, State(state): State<Arc<AppState>>)
             lat: Some(lat),
             ..
         } => {
-            let pollen = state.silam.read().unwrap().get_at_coords(&lon, &lat);
+            if (format!("{},{}", lon, lat) != format!("{:.3},{:.3}", lon, lat)) {
+                return Redirect::to(&format!("/?lat={:.3}&lon={:.3}", lat, lon)).into_response();
+            }
+
             let location = state
                 .reverse_geocoder
                 .search((lat.into(), lon.into()))
                 .record;
-            let tz = state
+            let tz: Tz = state
                 .finder
                 .get_tz_name(lon.into(), lat.into())
                 .parse()
                 .unwrap();
+            let start_index: usize = (Local::now()
+                .with_timezone(&tz)
+                .with_time(NaiveTime::from_hms_opt(0, 0, 0).unwrap())
+                .unwrap()
+                .to_utc()
+                - state.silam.read().unwrap().start_time)
+                .num_hours()
+                .try_into()
+                .unwrap();
+            let end_index = start_index + 72;
+            let pollen = state
+                .silam
+                .read()
+                .unwrap()
+                .get_at_coords(&lon, &lat)
+                .drain(start_index..end_index)
+                .collect();
+
             Some((
                 pollen,
                 format!(

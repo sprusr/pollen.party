@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-use chrono::{DateTime, Duration, SecondsFormat, Timelike, Utc};
+use chrono::{DateTime, Duration, NaiveTime, SecondsFormat, Utc};
 use ndarray::{s, Array3, Ix3};
 use proj4rs::Proj;
 
@@ -73,7 +73,7 @@ pub struct Pollen {
 
 pub struct Silam {
     pub fetch_time: DateTime<Utc>,
-    start_time: DateTime<Utc>,
+    pub start_time: DateTime<Utc>,
     poli: Array3<f32>,
     polisrc: Array3<f32>,
     rlats: Vec<f32>,
@@ -83,15 +83,10 @@ pub struct Silam {
 impl Silam {
     pub async fn fetch() -> Result<Silam, Box<dyn std::error::Error>> {
         let start_time = Utc::now()
-            .with_hour(0)
+            .with_time(NaiveTime::from_hms_opt(0, 0, 0).unwrap())
             .unwrap()
-            .with_minute(0)
-            .unwrap()
-            .with_second(0)
-            .unwrap()
-            .with_nanosecond(0)
-            .unwrap();
-        let end_time = start_time + Duration::hours(23);
+            - Duration::days(1);
+        let end_time = start_time + Duration::hours(23) + Duration::days(4);
         let silam_url = format!(
             "https://thredds.silam.fmi.fi/thredds/ncss/grid/silam_europe_pollen_v5_9/silam_europe_pollen_v5_9_best.ncd?var=POLI&var=POLISRC&north=75.950&west=-47.600&east=78.059&south=19.003&horizStride=1&accept=netcdf4ext&addLatLon=true&time_start={}&time_end={}",
             start_time.to_rfc3339_opts(SecondsFormat::Secs, true),
