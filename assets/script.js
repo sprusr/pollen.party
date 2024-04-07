@@ -1,3 +1,5 @@
+const DECIMAL_PLACES = 2;
+
 const geoForm = document.getElementById("geo-form");
 const geoButton = document.getElementById("geo")
 
@@ -15,8 +17,8 @@ geoButton.addEventListener('click', (event) => {
     const lonInput = document.getElementById("lon");
 
     navigator.geolocation.getCurrentPosition((position) => {
-        latInput.value = position.coords.latitude.toFixed(3);
-        lonInput.value = position.coords.longitude.toFixed(3);
+        latInput.value = position.coords.latitude.toFixed(DECIMAL_PLACES);
+        lonInput.value = position.coords.longitude.toFixed(DECIMAL_PLACES);
         event.target.value = originalGeoButtonValue;
         geoForm.submit();
     }, () => {
