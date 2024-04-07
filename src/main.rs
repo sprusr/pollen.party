@@ -56,6 +56,8 @@ async fn main() -> shuttle_axum::ShuttleAxum {
     Ok(router.into())
 }
 
+const DECIMAL_PLACES: usize = 2;
+
 async fn index(Query(params): Query<Params>, State(state): State<Arc<AppState>>) -> Response {
     let result: Option<(Vec<Pollen>, String, Tz)> = match params {
         Params {
@@ -63,8 +65,12 @@ async fn index(Query(params): Query<Params>, State(state): State<Arc<AppState>>)
             lat: Some(lat),
             ..
         } => {
-            if (format!("{},{}", lon, lat) != format!("{:.3},{:.3}", lon, lat)) {
-                return Redirect::to(&format!("/?lat={:.3}&lon={:.3}", lat, lon)).into_response();
+            if (format!("{},{}", lon, lat) != format!("{:.2$},{:.2$}", lon, lat, DECIMAL_PLACES)) {
+                return Redirect::to(&format!(
+                    "/?lat={:.2$}&lon={:.2$}",
+                    lat, lon, DECIMAL_PLACES
+                ))
+                .into_response();
             }
 
             let location = state
@@ -97,8 +103,14 @@ async fn index(Query(params): Query<Params>, State(state): State<Arc<AppState>>)
             Some((
                 pollen,
                 format!(
-                    "{}, {}, {}, {} ({:.3}, {:.3})",
-                    location.name, location.admin1, location.admin2, location.cc, lat, lon
+                    "{}, {}, {}, {} ({:.6$}, {:.6$})",
+                    location.name,
+                    location.admin1,
+                    location.admin2,
+                    location.cc,
+                    lat,
+                    lon,
+                    DECIMAL_PLACES,
                 ),
                 tz,
             ))
@@ -107,9 +119,10 @@ async fn index(Query(params): Query<Params>, State(state): State<Arc<AppState>>)
             let nominatim_response = state.nominatim.search(&loc).await.unwrap();
             let place = nominatim_response.first().unwrap();
             return Redirect::to(&format!(
-                "/?lat={:.3}&lon={:.3}",
+                "/?lat={:.2$}&lon={:.2$}",
                 place.lat.parse::<f32>().unwrap(),
-                place.lon.parse::<f32>().unwrap()
+                place.lon.parse::<f32>().unwrap(),
+                DECIMAL_PLACES,
             ))
             .into_response();
         }
