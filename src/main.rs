@@ -158,15 +158,17 @@ async fn index(Query(params): Query<Params>, State(state): State<Arc<AppState>>)
                         }
                     } @else {
                         p {
-                            "This website provides pollen forecasts for Europe. Data from "
+                            "This website provides pollen forecasts for Europe. "
+                            "Times displayed in location's local timezone. Data from "
                             a href="https://silam.fmi.fi/" { "FMI SILAM" }
                             " and "
                             a href="https://www.polleninfo.org/" { "EAN" }
-                            ". Times displayed in location's local timezone. "
-                            "Location search powered by OpenStreetMap."
+                            ". Search uses "
+                            a href="https://www.openstreetmap.org/copyright" { "OpenStreetMap" }
+                            "."
                         }
                         form action="" method="GET" id="geo-form" {
-                            input type="button" value="Geolocate" id="geo" class="big";
+                            input type="button" value="Use my location" id="geo" class="big";
                             input type="hidden" name="lat" id="lat";
                             input type="hidden" name="lon" id="lon";
                         }
