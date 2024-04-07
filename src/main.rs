@@ -162,7 +162,8 @@ async fn index(Query(params): Query<Params>, State(state): State<Arc<AppState>>)
                             a href="https://silam.fmi.fi/" { "FMI SILAM" }
                             " and "
                             a href="https://www.polleninfo.org/" { "EAN" }
-                            ". Times displayed in location's local timezone."
+                            ". Times displayed in location's local timezone. "
+                            "Location search powered by OpenStreetMap."
                         }
                         form action="" method="GET" id="geo-form" {
                             input type="button" value="Geolocate" id="geo" class="big";
@@ -179,7 +180,11 @@ async fn index(Query(params): Query<Params>, State(state): State<Arc<AppState>>)
                 }
                 footer {
                     p {
-                        small { "Data was fetched at: " (state.silam.read().unwrap().fetch_time) }
+                        small {
+                            "Data was fetched at: "
+                            (state.silam.read().unwrap().fetch_time)
+                            ". For enquiries contact webmaster at this domain."
+                        }
                     }
                 }
             }
