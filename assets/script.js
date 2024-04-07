@@ -1,9 +1,9 @@
-const form = document.getElementById("form");
-const geolocateButton = document.getElementById("geolocate")
+const geoForm = document.getElementById("geo-form");
+const geoButton = document.getElementById("geo")
 
-const originalGeolocateButtonValue = geolocateButton.value;
+const originalGeoButtonValue = geoButton.value;
 
-geolocateButton.addEventListener('click', (event) => {
+geoButton.addEventListener('click', (event) => {
     if (!("geolocation" in navigator)) {
         setValueForMs(event.target, 'Not supported', 1000);
         return;
@@ -15,12 +15,12 @@ geolocateButton.addEventListener('click', (event) => {
     const lonInput = document.getElementById("lon");
 
     navigator.geolocation.getCurrentPosition((position) => {
-        latInput.value = position.coords.latitude;
-        lonInput.value = position.coords.longitude;
-        event.target.value = originalGeolocateButtonValue;
-        form.submit();
+        latInput.value = position.coords.latitude.toFixed(3);
+        lonInput.value = position.coords.longitude.toFixed(3);
+        event.target.value = originalGeoButtonValue;
+        geoForm.submit();
     }, () => {
-        event.target.value = originalGeolocateButtonValue;
+        event.target.value = originalGeoButtonValue;
         setValueForMs(event.target, 'Failed to get location', 5000);
     });
 })
