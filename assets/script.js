@@ -3,9 +3,9 @@ const DECIMAL_PLACES = 2;
 const geoForm = document.getElementById("geo-form");
 const geoButton = document.getElementById("geo")
 
-const originalGeoButtonValue = geoButton.value;
+const originalGeoButtonValue = geoButton?.value;
 
-geoButton.addEventListener('click', (event) => {
+geoButton?.addEventListener('click', (event) => {
     if (!("geolocation" in navigator)) {
         setValueForMs(event.target, 'Not supported', 1000);
         return;

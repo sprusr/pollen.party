@@ -130,7 +130,7 @@ impl Silam {
     }
 
     pub fn is_stale(&self) -> bool {
-        self.fetch_time < Utc::now() - Duration::hours(6)
+        self.fetch_time < Utc::now() - Duration::hours(12)
     }
 
     pub fn get_at_coords(&self, lon: &f32, lat: &f32) -> Vec<Pollen> {

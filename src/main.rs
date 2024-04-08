@@ -65,7 +65,14 @@ async fn index(Query(params): Query<Params>, State(state): State<Arc<AppState>>)
             lat: Some(lat),
             ..
         } => {
-            if (format!("{},{}", lon, lat) != format!("{:.2$},{:.2$}", lon, lat, DECIMAL_PLACES)) {
+            let (rounded_lon, rounded_lat) = (
+                format!("{:.1$}", lon, DECIMAL_PLACES),
+                format!("{:.1$}", lat, DECIMAL_PLACES),
+            );
+
+            if rounded_lon.parse::<f32>().unwrap() != lon
+                || rounded_lat.parse::<f32>().unwrap() != lat
+            {
                 return Redirect::to(&format!(
                     "/?lat={:.2$}&lon={:.2$}",
                     lat, lon, DECIMAL_PLACES
@@ -116,8 +123,14 @@ async fn index(Query(params): Query<Params>, State(state): State<Arc<AppState>>)
             ))
         }
         Params { loc: Some(loc), .. } => {
-            let nominatim_response = state.nominatim.search(&loc).await.unwrap();
-            let place = nominatim_response.first().unwrap();
+            let nominatim_response = match state.nominatim.search(&loc).await {
+                Ok(res) => res,
+                Err(_) => return Redirect::to("/").into_response(),
+            };
+            let place = match nominatim_response.first() {
+                Some(first) => first,
+                None => return Redirect::to("/").into_response(),
+            };
             return Redirect::to(&format!(
                 "/?lat={:.2$}&lon={:.2$}",
                 place.lat.parse::<f32>().unwrap(),
@@ -144,10 +157,20 @@ async fn index(Query(params): Query<Params>, State(state): State<Arc<AppState>>)
             body {
                 header {
                     h1 { "⚘ " a href="/" { "pollen.party" } " ⚘" }
+                    @if result.is_some() {
+                        p { small { a href="/" { "‹ Back" } } }
+                    }
                 }
                 main {
                     @if let Some((pollen, location, timezone)) = result {
                         h2 { (location) }
+                        p {
+                            "Data from "
+                            a href="https://silam.fmi.fi/" { "FMI SILAM" }
+                            " and "
+                            a href="https://www.polleninfo.org/" { "EAN" }
+                            "."
+                        }
                         table {
                             @for p in &pollen {
                                 tr {
@@ -175,7 +198,7 @@ async fn index(Query(params): Query<Params>, State(state): State<Arc<AppState>>)
                         p class="center" { "or" }
                         form action="" method="GET" {
                             label for="loc" { "Location" }
-                            input type="text" name="loc" id="loc" placeholder="E.g. Helsinki, Finland";
+                            input type="text" name="loc" id="loc" placeholder="E.g. Helsinki, Finland" required;
                             input type="submit" value="Search";
                         }
                     }
