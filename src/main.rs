@@ -10,6 +10,7 @@ use maud::{html, DOCTYPE};
 use nominatim::{Client, IdentificationMethod};
 use reverse_geocoder::ReverseGeocoder;
 use serde::Deserialize;
+use shuttle_runtime::SecretStore;
 use std::{
     str::FromStr,
     sync::{Arc, RwLock},
@@ -28,6 +29,7 @@ struct AppState {
     nominatim: Client,
     reverse_geocoder: ReverseGeocoder,
     silam: RwLock<Silam>,
+    silam_email: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -38,12 +40,15 @@ struct Params {
 }
 
 #[shuttle_runtime::main]
-async fn main() -> shuttle_axum::ShuttleAxum {
+async fn main(#[shuttle_runtime::Secrets] secrets: SecretStore) -> shuttle_axum::ShuttleAxum {
+    let silam_email = secrets.get("SILAM_EMAIL");
+
     let state = Arc::new(AppState {
         finder: DefaultFinder::new(),
         nominatim: Client::new(IdentificationMethod::from_user_agent("pollen.party")),
         reverse_geocoder: ReverseGeocoder::new(),
-        silam: RwLock::new(Silam::fetch().await.unwrap()),
+        silam: RwLock::new(Silam::fetch(&silam_email).await.unwrap()),
+        silam_email,
     });
 
     let router = Router::new()
@@ -222,7 +227,7 @@ async fn silam_refetch_if_stale(state: Arc<AppState>) -> () {
     loop {
         interval.tick().await;
         if state.silam.read().unwrap().is_stale() {
-            let silam = Silam::fetch().await.unwrap();
+            let silam = Silam::fetch(&state.silam_email).await.unwrap();
             *state.silam.write().unwrap() = silam;
         }
     }

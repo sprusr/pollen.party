@@ -81,18 +81,23 @@ pub struct Silam {
 }
 
 impl Silam {
-    pub async fn fetch() -> Result<Silam, Box<dyn std::error::Error>> {
+    pub async fn fetch(silam_email: &Option<String>) -> Result<Silam, Box<dyn std::error::Error>> {
         let start_time = Utc::now()
             .with_time(NaiveTime::from_hms_opt(0, 0, 0).unwrap())
             .unwrap()
             - Duration::days(1);
         let end_time = start_time + Duration::hours(23) + Duration::days(4);
+        let silam_email_param = match silam_email {
+            Some(email) => format!("&email={}", email),
+            None => String::new(),
+        };
         let silam_url = format!(
-            "https://thredds.silam.fmi.fi/thredds/ncss/grid/silam_europe_pollen_v5_9/silam_europe_pollen_v5_9_best.ncd?var=POLI&var=POLISRC&north=75.950&west=-47.600&east=78.059&south=19.003&horizStride=1&accept=netcdf4ext&addLatLon=true&time_start={}&time_end={}",
+            "https://thredds.silam.fmi.fi/thredds/ncss/grid/silam_europe_pollen_v5_9/silam_europe_pollen_v5_9_best.ncd?var=POLI&var=POLISRC&north=75.950&west=-47.600&east=78.059&south=19.003&horizStride=1&accept=netcdf4ext&addLatLon=true&time_start={}&time_end={}{}",
             start_time.to_rfc3339_opts(SecondsFormat::Secs, true),
             end_time.to_rfc3339_opts(SecondsFormat::Secs, true),
+            silam_email_param,
         );
-        println!("Fetching new data from SILAM");
+        println!("Fetching new data from SILAM: {}", silam_url);
         let body = reqwest::get(silam_url).await?.bytes().await?;
         let file = netcdf::open_mem(None, &body)?;
 
