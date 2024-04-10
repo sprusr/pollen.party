@@ -165,10 +165,10 @@ async fn index(Query(params): Query<Params>, State(state): State<Arc<AppState>>)
     let cache_control = match result {
         Some((_, _, tz)) => {
             let max_age = get_max_age(&state.silam.read().unwrap().time_until_stale(), &tz);
-            format!("max-age={}, public, immutable, must-revalidate", max_age)
+            format!("s-max-age={}, public, immutable, must-revalidate", max_age)
         }
         None => format!(
-            "max-age={}, public, immutable, must-revalidate",
+            "s-max-age={}, public, immutable, must-revalidate",
             &state.silam.read().unwrap().time_until_stale().num_seconds()
         ),
     };
