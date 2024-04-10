@@ -1,4 +1,4 @@
-use std::fmt::Display;
+use std::{cmp::max, fmt::Display};
 
 use chrono::{DateTime, Duration, NaiveTime, SecondsFormat, Utc};
 use ndarray::{s, Array3, Ix3};
@@ -134,8 +134,16 @@ impl Silam {
         })
     }
 
+    fn stale_at(&self) -> DateTime<Utc> {
+        self.fetch_time + Duration::hours(12)
+    }
+
+    pub fn time_until_stale(&self) -> Duration {
+        max(self.stale_at() - Utc::now(), Duration::zero())
+    }
+
     pub fn is_stale(&self) -> bool {
-        self.fetch_time < Utc::now() - Duration::hours(12)
+        self.time_until_stale() == Duration::zero()
     }
 
     pub fn get_at_coords(&self, lon: &f32, lat: &f32) -> Vec<Pollen> {

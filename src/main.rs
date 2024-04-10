@@ -1,5 +1,6 @@
 use axum::{
     extract::{Query, State},
+    http::HeaderMap,
     response::{IntoResponse, Redirect, Response},
     routing::get,
     Router,
@@ -8,13 +9,14 @@ use chrono::{Local, Locale, NaiveTime};
 use chrono_tz::Tz;
 use maud::{html, DOCTYPE};
 use nominatim::{Client, IdentificationMethod};
+use reqwest::header;
 use reverse_geocoder::ReverseGeocoder;
 use serde::Deserialize;
 use shuttle_runtime::SecretStore;
 use std::{
+    cmp::min,
     str::FromStr,
     sync::{Arc, RwLock},
-    time::Duration,
 };
 use tokio::time;
 use tower_http::services::ServeDir;
@@ -63,6 +65,17 @@ async fn main(#[shuttle_runtime::Secrets] secrets: SecretStore) -> shuttle_axum:
 
 const DECIMAL_PLACES: usize = 2;
 
+fn get_max_age(time_until_stale: &chrono::Duration, tz: &Tz) -> i64 {
+    let seconds_until_stale = time_until_stale.num_seconds();
+    let now = Local::now().with_timezone(tz);
+    let time_until_local_midnight = (now + chrono::Duration::days(1))
+        .with_time(NaiveTime::from_hms_opt(0, 0, 0).unwrap())
+        .unwrap()
+        - now;
+    let seconds_until_local_midnight = time_until_local_midnight.num_seconds();
+    min(seconds_until_stale, seconds_until_local_midnight)
+}
+
 async fn index(Query(params): Query<Params>, State(state): State<Arc<AppState>>) -> Response {
     let result: Option<(Vec<Pollen>, String, Tz)> = match params {
         Params {
@@ -78,7 +91,7 @@ async fn index(Query(params): Query<Params>, State(state): State<Arc<AppState>>)
             if rounded_lon.parse::<f32>().unwrap() != lon
                 || rounded_lat.parse::<f32>().unwrap() != lat
             {
-                return Redirect::to(&format!(
+                return Redirect::permanent(&format!(
                     "/?lat={:.2$}&lon={:.2$}",
                     lat, lon, DECIMAL_PLACES
                 ))
@@ -130,13 +143,13 @@ async fn index(Query(params): Query<Params>, State(state): State<Arc<AppState>>)
         Params { loc: Some(loc), .. } => {
             let nominatim_response = match state.nominatim.search(&loc).await {
                 Ok(res) => res,
-                Err(_) => return Redirect::to("/").into_response(),
+                Err(_) => return Redirect::temporary("/").into_response(),
             };
             let place = match nominatim_response.first() {
                 Some(first) => first,
-                None => return Redirect::to("/").into_response(),
+                None => return Redirect::temporary("/").into_response(),
             };
-            return Redirect::to(&format!(
+            return Redirect::permanent(&format!(
                 "/?lat={:.2$}&lon={:.2$}",
                 place.lat.parse::<f32>().unwrap(),
                 place.lon.parse::<f32>().unwrap(),
@@ -149,7 +162,20 @@ async fn index(Query(params): Query<Params>, State(state): State<Arc<AppState>>)
 
     let locale = Locale::from_str("en_GB").unwrap();
 
-    html! {
+    let cache_control = match result {
+        Some((_, _, tz)) => {
+            let max_age = get_max_age(&state.silam.read().unwrap().time_until_stale(), &tz);
+            format!("max-age={}, public, immutable, must-revalidate", max_age)
+        }
+        None => format!(
+            "max-age={}, public, immutable, must-revalidate",
+            &state.silam.read().unwrap().time_until_stale().num_seconds()
+        ),
+    };
+    let mut headers = HeaderMap::new();
+    headers.insert(header::CACHE_CONTROL, cache_control.parse().unwrap());
+
+    let body = html! {
         (DOCTYPE)
         html lang="en" {
             head {
@@ -219,11 +245,13 @@ async fn index(Query(params): Query<Params>, State(state): State<Arc<AppState>>)
                 }
             }
         }
-    }.into_response()
+    };
+
+    (headers, body).into_response()
 }
 
 async fn silam_refetch_if_stale(state: Arc<AppState>) -> () {
-    let mut interval = time::interval(Duration::from_secs(10));
+    let mut interval = time::interval(std::time::Duration::from_secs(10));
     loop {
         interval.tick().await;
         if state.silam.read().unwrap().is_stale() {
