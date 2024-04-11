@@ -99,7 +99,7 @@ pub fn forecast(pollen: &Vec<Pollen>, location: &String, timezone: &Tz, locale: 
                 td { (pollen[24].time.with_timezone(timezone).format_localized("%a", *locale)) }
                 td { (pollen[48].time.with_timezone(timezone).format_localized("%a", *locale)) }
             }
-            @for n in 0..23 {
+            @for n in 0..24 {
                 tr {
                     td { (pollen[n].time.with_timezone(timezone).format_localized("%R", *locale)) }
                     td class={ "level-" (pollen[n].pollen_index) } { (pollen[n].pollen_index) " (" (pollen[n].pollen_index_source) ")" }
