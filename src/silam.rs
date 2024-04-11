@@ -1,8 +1,7 @@
-use std::{cmp::max, fmt::Display};
-
 use chrono::{DateTime, Duration, NaiveTime, SecondsFormat, Utc};
 use ndarray::{s, Array3, Ix3};
 use proj4rs::Proj;
+use std::{cmp::max, fmt::Display};
 
 #[derive(Debug)]
 pub enum PollenIndex {
