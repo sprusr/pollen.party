@@ -110,4 +110,26 @@ th,
 td {
   border: var(--element-border-width) solid var(--border-main);
   padding: 0.5rem;
+  font-weight: bold;
+}
+
+.level-0,
+.level-1 {
+  color: #00ff12;
+}
+
+.level-2 {
+  color: #eeff00;
+}
+
+.level-3 {
+  color: #ffe600;
+}
+
+.level-4 {
+  color: #ffb433;
+}
+
+.level-5 {
+  color: #ff5959;
 }

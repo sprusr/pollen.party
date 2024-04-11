@@ -2,7 +2,7 @@ use chrono::{DateTime, Locale, Utc};
 use chrono_tz::Tz;
 use maud::{html, Markup, DOCTYPE};
 
-use crate::silam::Pollen;
+use crate::silam::{Pollen, PollenType};
 
 pub fn page(back_enabled: bool, fetched_at: DateTime<Utc>, content: Markup) -> Markup {
     html! {
@@ -75,11 +75,36 @@ pub fn forecast(pollen: &Vec<Pollen>, location: &String, timezone: &Tz, locale: 
             a href="https://www.polleninfo.org/" { "EAN" }
             "."
         }
+        p {
+            "Pollen count: 1 (low) - 5 (high). Pollen type: "
+            (PollenType::Alder)
+            "=Alder, "
+            (PollenType::Birch)
+            "=Birch, "
+            (PollenType::Grass)
+            "=Grass, "
+            (PollenType::Olive)
+            "=Olive, "
+            (PollenType::Mugwort)
+            "=Mugwort, "
+            (PollenType::Ragweed)
+            "=Ragweed, "
+            (PollenType::Unknown)
+            "=Unknown."
+        }
         table {
-            @for p in pollen {
+            tr {
+                td {}
+                td { (pollen[0].time.with_timezone(timezone).format_localized("%a", *locale)) }
+                td { (pollen[24].time.with_timezone(timezone).format_localized("%a", *locale)) }
+                td { (pollen[48].time.with_timezone(timezone).format_localized("%a", *locale)) }
+            }
+            @for n in 0..23 {
                 tr {
-                    td { (p.time.with_timezone(timezone).format_localized("%a %R", *locale)) }
-                    td { (p.pollen_index) " (" (p.pollen_index_source) ")" }
+                    td { (pollen[n].time.with_timezone(timezone).format_localized("%R", *locale)) }
+                    td class={ "level-" (pollen[n].pollen_index) } { (pollen[n].pollen_index) " (" (pollen[n].pollen_index_source) ")" }
+                    td class={ "level-" (pollen[n + 24].pollen_index) } { (pollen[n + 24].pollen_index) "(" (pollen[n + 24].pollen_index_source) ")" }
+                    td class={ "level-" (pollen[n + 48].pollen_index) } { (pollen[n + 48].pollen_index) "(" (pollen[n + 48].pollen_index_source) ")" }
                 }
             }
         }

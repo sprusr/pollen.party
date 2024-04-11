@@ -28,7 +28,14 @@ impl PollenIndex {
 
 impl Display for PollenIndex {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:?}", self)
+        match self {
+            PollenIndex::Unknown => write!(f, "0"),
+            PollenIndex::VeryLow => write!(f, "1"),
+            PollenIndex::Low => write!(f, "2"),
+            PollenIndex::Moderate => write!(f, "3"),
+            PollenIndex::High => write!(f, "4"),
+            PollenIndex::VeryHigh => write!(f, "5"),
+        }
     }
 }
 
@@ -60,7 +67,15 @@ impl PollenType {
 
 impl Display for PollenType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:?}", self)
+        match self {
+            PollenType::Unknown => write!(f, "?"),
+            PollenType::Alder => write!(f, "A"),
+            PollenType::Birch => write!(f, "B"),
+            PollenType::Grass => write!(f, "G"),
+            PollenType::Olive => write!(f, "O"),
+            PollenType::Mugwort => write!(f, "M"),
+            PollenType::Ragweed => write!(f, "R"),
+        }
     }
 }
 
