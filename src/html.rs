@@ -69,28 +69,11 @@ pub fn forecast(pollen: &Vec<Pollen>, location: &String, timezone: &Tz, locale: 
     html! {
         h2 { (location) }
         p {
-            "Data from "
+            "Pollen count: 1 (low) - 5 (high). Main pollen source in brackets. Data from "
             a href="https://silam.fmi.fi/" { "FMI SILAM" }
             " and "
             a href="https://www.polleninfo.org/" { "EAN" }
             "."
-        }
-        p {
-            "Pollen count: 1 (low) - 5 (high). Pollen type: "
-            (PollenType::Alder)
-            "=Alder, "
-            (PollenType::Birch)
-            "=Birch, "
-            (PollenType::Grass)
-            "=Grass, "
-            (PollenType::Olive)
-            "=Olive, "
-            (PollenType::Mugwort)
-            "=Mugwort, "
-            (PollenType::Ragweed)
-            "=Ragweed, "
-            (PollenType::Unknown)
-            "=Unknown."
         }
         table {
             tr {
