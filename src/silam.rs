@@ -68,13 +68,13 @@ impl PollenType {
 impl Display for PollenType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            PollenType::Unknown => write!(f, "?"),
-            PollenType::Alder => write!(f, "A"),
-            PollenType::Birch => write!(f, "B"),
-            PollenType::Grass => write!(f, "G"),
-            PollenType::Olive => write!(f, "O"),
-            PollenType::Mugwort => write!(f, "M"),
-            PollenType::Ragweed => write!(f, "R"),
+            PollenType::Unknown => write!(f, "???"),
+            PollenType::Alder => write!(f, "Alder"),
+            PollenType::Birch => write!(f, "Birch"),
+            PollenType::Grass => write!(f, "Grass"),
+            PollenType::Olive => write!(f, "Olive"),
+            PollenType::Mugwort => write!(f, "Mugwort"),
+            PollenType::Ragweed => write!(f, "Ragweed"),
         }
     }
 }

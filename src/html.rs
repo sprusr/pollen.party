@@ -103,8 +103,8 @@ pub fn forecast(pollen: &Vec<Pollen>, location: &String, timezone: &Tz, locale: 
                 tr {
                     td { (pollen[n].time.with_timezone(timezone).format_localized("%R", *locale)) }
                     td class={ "level-" (pollen[n].pollen_index) } { (pollen[n].pollen_index) " (" (pollen[n].pollen_index_source) ")" }
-                    td class={ "level-" (pollen[n + 24].pollen_index) } { (pollen[n + 24].pollen_index) "(" (pollen[n + 24].pollen_index_source) ")" }
-                    td class={ "level-" (pollen[n + 48].pollen_index) } { (pollen[n + 48].pollen_index) "(" (pollen[n + 48].pollen_index_source) ")" }
+                    td class={ "level-" (pollen[n + 24].pollen_index) } { (pollen[n + 24].pollen_index) " (" (pollen[n + 24].pollen_index_source) ")" }
+                    td class={ "level-" (pollen[n + 48].pollen_index) } { (pollen[n + 48].pollen_index) " (" (pollen[n + 48].pollen_index_source) ")" }
                 }
             }
         }
