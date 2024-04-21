@@ -159,6 +159,7 @@ pub struct ApiResponse {
 
 pub async fn api(Query(params): Query<ApiParams>, State(state): State<Arc<AppState>>) -> Response {
     let mut headers = HeaderMap::new();
+    headers.insert(header::ACCESS_CONTROL_ALLOW_ORIGIN, "*".parse().unwrap());
 
     if let ApiParams {
         lon: Some(lon),
@@ -189,9 +190,9 @@ pub async fn api(Query(params): Query<ApiParams>, State(state): State<Arc<AppSta
             .reverse_geocoder
             .search((lat.into(), lon.into()))
             .record;
-        let location_heading = format!(
-            "{}, {}, {}, {} ({:.6$}, {:.6$})",
-            location.name, location.admin1, location.admin2, location.cc, lat, lon, DECIMAL_PLACES,
+        let location_string = format!(
+            "{}, {}, {}, {}",
+            location.name, location.admin1, location.admin2, location.cc,
         );
 
         let tz: Tz = state
@@ -226,7 +227,7 @@ pub async fn api(Query(params): Query<ApiParams>, State(state): State<Arc<AppSta
             headers,
             Json(ApiResponse {
                 attribution: "Data from FMI SILAM and EAN".to_string(),
-                location: location_heading,
+                location: location_string,
                 pollen,
             }),
         )
