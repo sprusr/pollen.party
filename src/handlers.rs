@@ -2,28 +2,33 @@ use axum::{
     extract::{Query, State},
     http::HeaderMap,
     response::{IntoResponse, Redirect, Response},
+    Json,
 };
 use chrono::{Local, Locale, NaiveTime};
 use chrono_tz::Tz;
 use reqwest::header;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::{cmp::min, str::FromStr, sync::Arc};
 
 use crate::{
     html::{forecast, home, page},
+    silam::Pollen,
     AppState,
 };
 
 const DECIMAL_PLACES: usize = 2;
 
 #[derive(Deserialize)]
-pub struct Params {
+pub struct IndexParams {
     lon: Option<f32>,
     lat: Option<f32>,
     loc: Option<String>,
 }
 
-pub async fn index(Query(params): Query<Params>, State(state): State<Arc<AppState>>) -> Response {
+pub async fn index(
+    Query(params): Query<IndexParams>,
+    State(state): State<Arc<AppState>>,
+) -> Response {
     if let Some(loc) = params.loc {
         let nominatim_response = match state.nominatim.search(&loc).await {
             Ok(res) => res,
@@ -44,7 +49,7 @@ pub async fn index(Query(params): Query<Params>, State(state): State<Arc<AppStat
 
     let mut headers = HeaderMap::new();
 
-    if let Params {
+    if let IndexParams {
         lon: Some(lon),
         lat: Some(lat),
         ..
@@ -132,4 +137,91 @@ fn get_max_age(time_until_stale: &chrono::Duration, tz: &Tz) -> i64 {
         - now;
     let seconds_until_local_midnight = time_until_local_midnight.num_seconds();
     min(seconds_until_stale, seconds_until_local_midnight)
+}
+
+#[derive(Deserialize)]
+pub struct ApiParams {
+    lon: Option<f32>,
+    lat: Option<f32>,
+}
+
+#[derive(Serialize)]
+pub struct ApiError {
+    msg: String,
+}
+
+#[derive(Serialize)]
+pub struct ApiResponse {
+    pollen: Vec<Pollen>,
+}
+
+pub async fn api(Query(params): Query<ApiParams>, State(state): State<Arc<AppState>>) -> Response {
+    let mut headers = HeaderMap::new();
+
+    if let ApiParams {
+        lon: Some(lon),
+        lat: Some(lat),
+        ..
+    } = params
+    {
+        let (rounded_lon, rounded_lat) = (
+            format!("{:.1$}", lon, DECIMAL_PLACES),
+            format!("{:.1$}", lat, DECIMAL_PLACES),
+        );
+
+        if rounded_lon.parse::<f32>().unwrap() != lon || rounded_lat.parse::<f32>().unwrap() != lat
+        {
+            return Json(ApiError {
+                msg: format!(
+                    "Coordinates accept maximum {} decimal places",
+                    DECIMAL_PLACES
+                ),
+            })
+            .into_response();
+        }
+
+        let tz: Tz = state
+            .finder
+            .get_tz_name(lon.into(), lat.into())
+            .parse()
+            .unwrap();
+
+        let start_index: usize = (Local::now()
+            .with_timezone(&tz)
+            .with_time(NaiveTime::from_hms_opt(0, 0, 0).unwrap())
+            .unwrap()
+            .to_utc()
+            - state.silam.read().unwrap().start_time)
+            .num_hours()
+            .try_into()
+            .unwrap();
+        let end_index = start_index + 72;
+        let pollen = state
+            .silam
+            .read()
+            .unwrap()
+            .get_at_coords(&lon, &lat)
+            .drain(start_index..end_index)
+            .collect();
+
+        let max_age = get_max_age(&state.silam.read().unwrap().time_until_stale(), &tz);
+        let cache_control = format!("s-max-age={}, public, immutable, must-revalidate", max_age);
+        headers.insert(header::CACHE_CONTROL, cache_control.parse().unwrap());
+
+        return (headers, Json(ApiResponse { pollen })).into_response();
+    }
+
+    let cache_control = format!(
+        "s-max-age={}, public, immutable, must-revalidate",
+        &state.silam.read().unwrap().time_until_stale().num_seconds()
+    );
+    headers.insert(header::CACHE_CONTROL, cache_control.parse().unwrap());
+
+    (
+        headers,
+        Json(ApiError {
+            msg: "?lat=&lon= query params missing".to_string(),
+        }),
+    )
+        .into_response()
 }

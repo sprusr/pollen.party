@@ -2,7 +2,7 @@ use chrono::{DateTime, Locale, Utc};
 use chrono_tz::Tz;
 use maud::{html, Markup, DOCTYPE};
 
-use crate::silam::{Pollen, PollenType};
+use crate::silam::Pollen;
 
 pub fn page(back_enabled: bool, fetched_at: DateTime<Utc>, content: Markup) -> Markup {
     html! {

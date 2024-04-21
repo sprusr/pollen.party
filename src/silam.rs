@@ -1,9 +1,10 @@
 use chrono::{DateTime, Duration, NaiveTime, SecondsFormat, Utc};
 use ndarray::{s, Array3, Ix3};
 use proj4rs::Proj;
+use serde::Serialize;
 use std::{cmp::max, fmt::Display};
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub enum PollenIndex {
     Unknown,
     VeryLow,
@@ -39,7 +40,7 @@ impl Display for PollenIndex {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub enum PollenType {
     Unknown = -1,
     Alder = 1,
@@ -79,6 +80,7 @@ impl Display for PollenType {
     }
 }
 
+#[derive(Serialize)]
 pub struct Pollen {
     pub time: DateTime<Utc>,
     pub pollen_index: PollenIndex,

@@ -11,7 +11,10 @@ mod handlers;
 mod html;
 mod silam;
 
-use crate::{handlers::index, silam::Silam};
+use crate::{
+    handlers::{api, index},
+    silam::Silam,
+};
 
 pub struct AppState {
     finder: DefaultFinder,
@@ -35,6 +38,7 @@ async fn main(#[shuttle_runtime::Secrets] secrets: SecretStore) -> shuttle_axum:
 
     let router = Router::new()
         .route("/", get(index))
+        .route("/api", get(api))
         .with_state(Arc::clone(&state))
         .fallback_service(ServeDir::new("assets"));
 
