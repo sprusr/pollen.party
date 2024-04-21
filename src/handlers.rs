@@ -6,7 +6,7 @@ use axum::{
 };
 use chrono::{Local, Locale, NaiveTime};
 use chrono_tz::Tz;
-use reqwest::header;
+use reqwest::{header, StatusCode};
 use serde::{Deserialize, Serialize};
 use std::{cmp::min, str::FromStr, sync::Arc};
 
@@ -152,6 +152,8 @@ pub struct ApiError {
 
 #[derive(Serialize)]
 pub struct ApiResponse {
+    attribution: String,
+    location: String,
     pollen: Vec<Pollen>,
 }
 
@@ -171,14 +173,26 @@ pub async fn api(Query(params): Query<ApiParams>, State(state): State<Arc<AppSta
 
         if rounded_lon.parse::<f32>().unwrap() != lon || rounded_lat.parse::<f32>().unwrap() != lat
         {
-            return Json(ApiError {
-                msg: format!(
-                    "Coordinates accept maximum {} decimal places",
-                    DECIMAL_PLACES
-                ),
-            })
-            .into_response();
+            return (
+                StatusCode::BAD_REQUEST,
+                Json(ApiError {
+                    msg: format!(
+                        "Coordinates accept maximum {} decimal places",
+                        DECIMAL_PLACES
+                    ),
+                }),
+            )
+                .into_response();
         }
+
+        let location = state
+            .reverse_geocoder
+            .search((lat.into(), lon.into()))
+            .record;
+        let location_heading = format!(
+            "{}, {}, {}, {} ({:.6$}, {:.6$})",
+            location.name, location.admin1, location.admin2, location.cc, lat, lon, DECIMAL_PLACES,
+        );
 
         let tz: Tz = state
             .finder
@@ -208,7 +222,15 @@ pub async fn api(Query(params): Query<ApiParams>, State(state): State<Arc<AppSta
         let cache_control = format!("s-max-age={}, public, immutable, must-revalidate", max_age);
         headers.insert(header::CACHE_CONTROL, cache_control.parse().unwrap());
 
-        return (headers, Json(ApiResponse { pollen })).into_response();
+        return (
+            headers,
+            Json(ApiResponse {
+                attribution: "Data from FMI SILAM and EAN".to_string(),
+                location: location_heading,
+                pollen,
+            }),
+        )
+            .into_response();
     }
 
     let cache_control = format!(
@@ -218,6 +240,7 @@ pub async fn api(Query(params): Query<ApiParams>, State(state): State<Arc<AppSta
     headers.insert(header::CACHE_CONTROL, cache_control.parse().unwrap());
 
     (
+        StatusCode::BAD_REQUEST,
         headers,
         Json(ApiError {
             msg: "?lat=&lon= query params missing".to_string(),
