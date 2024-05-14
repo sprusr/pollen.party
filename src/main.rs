@@ -1,4 +1,8 @@
-use axum::{routing::get, Router};
+use axum::{
+    routing::{get, post},
+    Router,
+};
+use handlers::emf_phone;
 use nominatim::{Client, IdentificationMethod};
 use reverse_geocoder::ReverseGeocoder;
 use shuttle_runtime::SecretStore;
@@ -39,6 +43,7 @@ async fn main(#[shuttle_runtime::Secrets] secrets: SecretStore) -> shuttle_axum:
     let router = Router::new()
         .route("/", get(index))
         .route("/api", get(api))
+        .route("/emfphone", post(emf_phone))
         .with_state(Arc::clone(&state))
         .fallback_service(ServeDir::new("assets"));
 

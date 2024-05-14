@@ -4,7 +4,7 @@ use proj4rs::Proj;
 use serde::Serialize;
 use std::{cmp::max, fmt::Display};
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Clone, Copy)]
 pub enum PollenIndex {
     Unknown,
     VeryLow,
@@ -25,6 +25,17 @@ impl PollenIndex {
             _ => PollenIndex::Unknown,
         }
     }
+
+    pub fn to_spoken(&self) -> &str {
+        match self {
+            PollenIndex::Unknown => "unknown",
+            PollenIndex::VeryLow => "very low",
+            PollenIndex::Low => "low",
+            PollenIndex::Moderate => "moderate",
+            PollenIndex::High => "high",
+            PollenIndex::VeryHigh => "very high",
+        }
+    }
 }
 
 impl Display for PollenIndex {
@@ -40,7 +51,7 @@ impl Display for PollenIndex {
     }
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Clone, Copy)]
 pub enum PollenType {
     Unknown = -1,
     Alder = 1,
@@ -64,6 +75,18 @@ impl PollenType {
             _ => PollenType::Unknown,
         }
     }
+
+    pub fn to_spoken(&self) -> &str {
+        match self {
+            PollenType::Unknown => "unknown",
+            PollenType::Alder => "alder",
+            PollenType::Birch => "birch",
+            PollenType::Grass => "grass",
+            PollenType::Olive => "olive",
+            PollenType::Mugwort => "mugwort",
+            PollenType::Ragweed => "ragweed",
+        }
+    }
 }
 
 impl Display for PollenType {
@@ -80,7 +103,7 @@ impl Display for PollenType {
     }
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Clone, Copy)]
 pub struct Pollen {
     pub time: DateTime<Utc>,
     pub pollen_index: PollenIndex,

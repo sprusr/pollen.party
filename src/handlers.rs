@@ -8,6 +8,7 @@ use chrono::{Local, Locale, NaiveTime};
 use chrono_tz::Tz;
 use reqwest::{header, StatusCode};
 use serde::{Deserialize, Serialize};
+use serde_json::json;
 use std::{cmp::min, str::FromStr, sync::Arc};
 
 use crate::{
@@ -248,4 +249,43 @@ pub async fn api(Query(params): Query<ApiParams>, State(state): State<Arc<AppSta
         }),
     )
         .into_response()
+}
+
+pub async fn emf_phone(State(state): State<Arc<AppState>>) -> Response {
+    let lon: f32 = -2.38;
+    let lat: f32 = 52.04;
+
+    let tz: Tz = state
+        .finder
+        .get_tz_name(lon.into(), lat.into())
+        .parse()
+        .unwrap();
+
+    let now_index: usize = (Local::now().with_timezone(&tz).to_utc()
+        - state.silam.read().unwrap().start_time)
+        .num_hours()
+        .try_into()
+        .unwrap();
+
+    let pollen = state
+        .silam
+        .read()
+        .unwrap()
+        .get_at_coords(&lon, &lat)
+        .get(now_index)
+        .copied()
+        .unwrap();
+
+    let text = format!("Pollen is currently {} at Eastnor Deer Park. The main source of pollen is {}. Thank you for calling the EMF pollen hotline. Data provided by FMI and EAN.", pollen.pollen_index.to_spoken(), pollen.pollen_index_source.to_spoken());
+
+    return Json(json!([
+        {
+            "verb": "say",
+            "text": text
+        },
+        {
+            "verb": "hangup"
+        }
+    ]))
+    .into_response();
 }
