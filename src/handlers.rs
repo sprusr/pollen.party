@@ -276,7 +276,7 @@ pub async fn emf_phone(State(state): State<Arc<AppState>>) -> Response {
         .copied()
         .unwrap();
 
-    let text = format!("Pollen is currently {} at Eastnor Deer Park. The main source of pollen is {}. Thank you for calling the EMF pollen hotline. Data provided by FMI and EAN.", pollen.pollen_index.to_spoken(), pollen.pollen_index_source.to_spoken());
+    let text = format!("Pollen at EMF is currently {}. The main source of pollen is {}. Thank you for calling the EMF pollen hotline. Data provided by Finnish Meteorological Institute and European Aeroallergen Network.", pollen.pollen_index.to_spoken(), pollen.pollen_index_source.to_spoken());
 
     return Json(json!([
         {
