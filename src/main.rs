@@ -13,6 +13,7 @@ use tzf_rs::DefaultFinder;
 
 mod handlers;
 mod html;
+mod phone;
 mod silam;
 
 use crate::{

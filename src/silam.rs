@@ -4,7 +4,7 @@ use proj4rs::Proj;
 use serde::Serialize;
 use std::{cmp::max, fmt::Display};
 
-#[derive(Debug, Serialize, Clone, Copy)]
+#[derive(Debug, Serialize, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum PollenIndex {
     Unknown,
     VeryLow,

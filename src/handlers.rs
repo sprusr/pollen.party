@@ -13,6 +13,7 @@ use std::{cmp::min, str::FromStr, sync::Arc};
 
 use crate::{
     html::{forecast, home, page},
+    phone::get_phone_text,
     silam::Pollen,
     AppState,
 };
@@ -267,16 +268,25 @@ pub async fn emf_phone(State(state): State<Arc<AppState>>) -> Response {
         .try_into()
         .unwrap();
 
+    let start_index: usize = (Local::now()
+        .with_timezone(&tz)
+        .with_time(NaiveTime::from_hms_opt(0, 0, 0).unwrap())
+        .unwrap()
+        .to_utc()
+        - state.silam.read().unwrap().start_time)
+        .num_hours()
+        .try_into()
+        .unwrap();
+    let end_index = start_index + 72;
     let pollen = state
         .silam
         .read()
         .unwrap()
         .get_at_coords(&lon, &lat)
-        .get(now_index)
-        .copied()
-        .unwrap();
+        .drain(start_index..end_index)
+        .collect();
 
-    let text = format!("Pollen at EMF is currently {}. The main source of pollen is {}. Thank you for calling the EMF pollen hotline. Data provided by Finnish Meteorological Institute and European Aeroallergen Network.", pollen.pollen_index.to_spoken(), pollen.pollen_index_source.to_spoken());
+    let text = get_phone_text(&pollen, now_index, tz);
 
     return Json(json!([
         {
