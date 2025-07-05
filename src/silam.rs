@@ -131,7 +131,7 @@ impl Silam {
             None => String::new(),
         };
         let silam_url = format!(
-            "https://thredds.silam.fmi.fi/thredds/ncss/grid/silam_europe_pollen_v5_9_1/silam_europe_pollen_v5_9_1_best.ncd?var=POLI&var=POLISRC&north=75.950&west=-47.600&east=78.059&south=19.003&horizStride=1&accept=netcdf4ext&addLatLon=true&time_start={}&time_end={}{}",
+            "https://thredds.silam.fmi.fi/thredds/ncss/grid/silam_europe_pollen_v6_0/silam_europe_pollen_v6_0_best.ncd?var=POLI&var=POLISRC&north=75.950&west=-47.600&east=78.059&south=19.003&horizStride=1&accept=netcdf4ext&addLatLon=true&time_start={}&time_end={}{}",
             start_time.to_rfc3339_opts(SecondsFormat::Secs, true),
             end_time.to_rfc3339_opts(SecondsFormat::Secs, true),
             silam_email_param,
